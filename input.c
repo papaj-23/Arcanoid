@@ -1,12 +1,12 @@
 #include "stm32f3xx_hal.h"
 #include "input.h"
 
-recent_times_t RecentTimes = {0, 0};
+static recent_times_t RecentTimes = {0};
 
 bool Button1_Debouncing() {
 	uint32_t current_time = HAL_GetTick();
 
-	if(current_time - RecentTimes.Joystick1_Button < 200) {
+	if(current_time - RecentTimes.Joystick1_Button < BUTTON_DEBOUNCING_TIME) {
 		return false;
 	}
 	else{
@@ -18,7 +18,7 @@ bool Button1_Debouncing() {
 bool Joystick1_Y_Debouncing() {
 	uint32_t current_time = HAL_GetTick();
 
-	if(current_time - RecentTimes.Joystick1_Yaxis < 250) {
+	if(current_time - RecentTimes.Joystick1_Yaxis < JOYSTICK_DEBOUNCING_TIME) {
 		return false;
 	}
 	else{

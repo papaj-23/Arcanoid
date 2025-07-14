@@ -133,8 +133,8 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim6);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)joystick1_XY, 2);
   HAL_ADC_Start_DMA(&hadc2, (uint32_t*)joystick2_XY, 2);
+
   LcdInitialise();
-  LcdClear();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -710,16 +710,17 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
-	//Ruchy platformy / Przesuwanie punktu startu
+	//platform refreshing, defines platform velocity
 	if(htim->Instance == TIM3){
 		Platforms_TIM_Handler();
 	}
 
+	//objects refreshing, defines ball velocity
 	if(htim->Instance == TIM4){
 		Objects_TIM_Handler();
 	}
 
-	//Pętla aktualizacji gry 60 FPS
+	//main refreshing
 	if (htim->Instance == TIM6){
 		Refresh_TIM_Handler();
 	}

@@ -183,7 +183,7 @@ static void Menu_Handler() {
 	switch(Current_Menu_State) {
 	case SINGLEPLAYER:
 		PCD8544_ClearBuffer();
-		gotoXY(3, 2);
+		gotoXY(3, 1);
 		PCD8544_Puts("SINGLEPLAYER", PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 		gotoXY(3, 10);
 		PCD8544_Puts("MULTIPLAYER", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
@@ -196,7 +196,7 @@ static void Menu_Handler() {
 		PCD8544_ClearBuffer();
 		gotoXY(3, 2);
 		PCD8544_Puts("SINGLEPLAYER", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
-		gotoXY(3, 10);
+		gotoXY(3, 9);
 		PCD8544_Puts("MULTIPLAYER", PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 		gotoXY(3, 18);
 		PCD8544_Puts("OPTIONS", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
@@ -210,7 +210,7 @@ static void Menu_Handler() {
 		PCD8544_Puts("SINGLEPLAYER", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 		gotoXY(3, 10);
 		PCD8544_Puts("MULTIPLAYER", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
-		gotoXY(3, 18);
+		gotoXY(3, 17);
 		PCD8544_Puts("OPTIONS", PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 		gotoXY(3, 26);
 		PCD8544_Puts("EXIT", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
@@ -224,13 +224,13 @@ static void Menu_Handler() {
 		PCD8544_Puts("MULTIPLAYER", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 		gotoXY(3, 18);
 		PCD8544_Puts("OPTIONS", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
-		gotoXY(3, 26);
+		gotoXY(3, 25);
 		PCD8544_Puts("EXIT", PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 		break;
 
 	case DIFFICULTY_EASY:
 		PCD8544_ClearBuffer();
-		gotoXY(3, 2);
+		gotoXY(3, 1);
 		PCD8544_Puts("EASY", PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 		gotoXY(3, 10);
 		PCD8544_Puts("MEDIUM", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
@@ -242,7 +242,7 @@ static void Menu_Handler() {
 		PCD8544_ClearBuffer();
 		gotoXY(3, 2);
 		PCD8544_Puts("EASY", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
-		gotoXY(3, 10);
+		gotoXY(3, 9);
 		PCD8544_Puts("MEDIUM", PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 		gotoXY(3, 18);
 		PCD8544_Puts("HARD", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
@@ -254,7 +254,7 @@ static void Menu_Handler() {
 		PCD8544_Puts("EASY", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 		gotoXY(3, 10);
 		PCD8544_Puts("MEDIUM", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
-		gotoXY(3, 18);
+		gotoXY(3, 17);
 		PCD8544_Puts("HARD", PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 		break;
 	}
