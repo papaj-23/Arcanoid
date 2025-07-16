@@ -1,16 +1,14 @@
 #include "stm32f3xx_hal.h"
 #include "pcd8544.h"
-#include <stdbool.h>
+#include <string.h>
+
+Buffer_t PCD8544_Buffer = {{0}, PCD8544_WIDTH - 1, 0, PCD8544_HEIGHT - 1, 0};
+Buffer_t Bonus_Buffer = {{0}, PCD8544_WIDTH - 1, 0, PCD8544_HEIGHT - 1, 0};
+uint8_t PCD8544_x;
+uint8_t PCD8544_y;
 
 
-
-uint8_t PCD8544_Buffer[PCD8544_BUFFER_SIZE];
-unsigned char PCD8544_UpdateXmin = 0, PCD8544_UpdateXmax = 0, PCD8544_UpdateYmin = 0, PCD8544_UpdateYmax = 0;
-unsigned char PCD8544_x;
-unsigned char PCD8544_y;
-
-
-const uint8_t PCD8544_Font5x7 [97][PCD8544_CHAR5x7_WIDTH] = {
+const uint8_t PCD8544_Font5x7 [97][5] = {
 	{ 0x00, 0x00, 0x00, 0x00, 0x00 },   // sp
 	{ 0x00, 0x00, 0x2f, 0x00, 0x00 },   // !
 	{ 0x00, 0x07, 0x00, 0x07, 0x00 },   // "
@@ -206,12 +204,12 @@ const uint8_t PCD8544_Font3x5[106][3] = {
 	{ 0x00, 0x1F, 0x00 },   // |
 	{ 0x11, 0x1B, 0x04 },   // }
 	{ 0x04, 0x06, 0x02 },   // ~
-	{ 0x1F, 0x1F, 0x1F },   // delete
+	{ 0x1F, 0x1F, 0x1F }    // delete
 };
 
 
 
-unsigned char spi_soft(unsigned char dat)
+uint8_t spi_soft(uint8_t dat)
 {
 	GPIO_InitTypeDef GPIO_InitStruct;
 	 GPIO_InitStruct.Pin = DI|SCK;
@@ -219,7 +217,7 @@ unsigned char spi_soft(unsigned char dat)
   	 GPIO_InitStruct.Pull = GPIO_NOPULL;
   	 GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
  	 HAL_GPIO_Init(PCDPORT, &GPIO_InitStruct);
-	unsigned char cnt = 8;
+ 	uint8_t cnt = 8;
 	while (cnt--) {
 		if (dat & 0x80)  HAL_GPIO_WritePin(PCDPORT,DI,GPIO_PIN_SET);
 		else HAL_GPIO_WritePin(PCDPORT,DI,GPIO_PIN_RESET);
@@ -231,7 +229,7 @@ unsigned char spi_soft(unsigned char dat)
 }
 
 
-void LcdWrite (unsigned char dc, uint8_t data)
+void LcdWrite (uint8_t dc, uint8_t data)
 {
 	if (dc==0) HAL_GPIO_WritePin(PCDPORT,DC,GPIO_PIN_RESET);
 	if (dc==1) HAL_GPIO_WritePin(PCDPORT,DC,GPIO_PIN_SET);
@@ -269,65 +267,32 @@ void LcdInitialise(void)
 }
 void gotoXY(int x, int y)
 {
-  LcdWrite( 0, 0x80 | x);  // Column.
-  LcdWrite( 0, 0x40 | y);  // Row.  
+  //LcdWrite(PCD8544_COMMAND, PCD8544_SETXADDR | x);  // Column.
+  //LcdWrite(PCD8544_COMMAND, PCD8544_SETYADDR | y);  // Row.
 
   PCD8544_x = x;
   PCD8544_y = y;
-
 }
 
-
-void PCD8544_DrawPixel(unsigned char x, unsigned char y, PCD8544_Pixel_t pixel) {
-	if (x >= PCD8544_WIDTH) {
-		return;
-	}
-	if (y >= PCD8544_HEIGHT) {
+void PCD8544_DrawPixel(uint8_t x, uint8_t y, PCD8544_Pixel_t pixel, Buffer_t *buffer) {
+	if (x >= PCD8544_WIDTH || y >= PCD8544_HEIGHT) {
 		return;
 	}
 
 	if (pixel != PCD8544_Pixel_Clear) {
-		PCD8544_Buffer[x + (y / 8) * PCD8544_WIDTH] |= 1 << (y % 8);
+		buffer->Content[x + (y / 8) * PCD8544_WIDTH] |= 1 << (y % 8);
 	} else {
-		PCD8544_Buffer[x + (y / 8) * PCD8544_WIDTH] &= ~(1 << (y % 8));
+		buffer->Content[x + (y / 8) * PCD8544_WIDTH] &= ~(1 << (y % 8));
 	}
-	PCD8544_UpdateArea(x, y, x, y);
+	PCD8544_UpdateArea(x, y, x, y, buffer);
 }
 
-
-/*
-void PCD8544_DrawPixel(unsigned char x, unsigned char y, PCD8544_Pixel_t pixel, uint8_t *buffer, bool IF_mainBuffer) {
-	if (x >= PCD8544_WIDTH) {
-		return;
-	}
-	if (y >= PCD8544_HEIGHT) {
-		return;
-	}
-
-	if (pixel != PCD8544_Pixel_Clear) {
-		*buffer + (x + (y / 8) * PCD8544_WIDTH) |= 1 << (y % 8);
-	} else {
-		*buffer + (x + (y / 8) * PCD8544_WIDTH) &= ~(1 << (y % 8));
-	}
-	if(IF_mainBuffer)
-		PCD8544_UpdateArea(x, y, x, y);
-*/
-/*
-void PCD8544_ClearBuffer(uint8_t *buffer, bool IF_mainBuffer) {
-    for (int i = 0; i < PCD8544_HEIGHT; i++) {
-        for (int j = 0; j < PCD8544_WIDTH; j++) {
-            PCD8544_DrawPixel(j, i, PCD8544_Pixel_Clear, buffer, IF_mainBuffer);
-        }
-    }
-}
-*/
-
-void PCD8544_ClearBuffer() {
-    for (int i = 0; i < PCD8544_HEIGHT; i++) {
-        for (int j = 0; j < PCD8544_WIDTH; j++) {
-            PCD8544_DrawPixel(j, i, PCD8544_Pixel_Clear);
-        }
-    }
+void PCD8544_ClearBuffer(Buffer_t *buffer) {
+	memset(buffer->Content, 0, sizeof(buffer->Content));
+    buffer->Update_xMin = 0;
+    buffer->Update_xMax = PCD8544_WIDTH - 1;
+    buffer->Update_yMin = 0;
+    buffer->Update_yMax = PCD8544_HEIGHT - 1;
 }
 
 void PCD8544_Invert(PCD8544_Invert_t invert) {
@@ -344,49 +309,54 @@ void PCD8544_Home(void) {
 }
 
 void PCD8544_Refresh(void) {
-	unsigned char i, j;
+	uint8_t i, j;
+	//No refresh needed
+	if(PCD8544_Buffer.Update_yMin > PCD8544_Buffer.Update_yMax || PCD8544_Buffer.Update_xMin > PCD8544_Buffer.Update_xMax) {
+		return;
+	}
+
 	for (i = 0; i < 6; i++) {
 		//Not in range yet
-		if (PCD8544_UpdateYmin > ((i + 1) * 8)) {
+		if (((i + 1) * 8) < PCD8544_Buffer.Update_yMin) {
 			continue;
 		}
 		//Over range, stop
-		if ((i * 8) > PCD8544_UpdateYmax) {
+		if ((i * 8) > PCD8544_Buffer.Update_yMax) {
 			break;
 		}
 
 		LcdWrite(PCD8544_COMMAND, PCD8544_SETYADDR | i);
-		LcdWrite(PCD8544_COMMAND, PCD8544_SETXADDR | PCD8544_UpdateXmin);
+		LcdWrite(PCD8544_COMMAND, PCD8544_SETXADDR | PCD8544_Buffer.Update_xMin);
 
-		for (j = PCD8544_UpdateXmin; j <= PCD8544_UpdateXmax; j++) {
-			LcdWrite(PCD8544_DATA, PCD8544_Buffer[(i * PCD8544_WIDTH) + j]);
+		for (j = PCD8544_Buffer.Update_xMin; j <= PCD8544_Buffer.Update_xMax; j++) {
+			LcdWrite(PCD8544_DATA, PCD8544_Buffer.Content[(i * PCD8544_WIDTH) + j]);
 		}
 	}
 
-	PCD8544_UpdateXmin = PCD8544_WIDTH - 1;
-	PCD8544_UpdateXmax = 0;
-	PCD8544_UpdateYmin = PCD8544_HEIGHT - 1;
-	PCD8544_UpdateYmax = 0;
+	PCD8544_Buffer.Update_xMin = PCD8544_WIDTH - 1;
+	PCD8544_Buffer.Update_xMax = 0;
+	PCD8544_Buffer.Update_yMin = PCD8544_HEIGHT - 1;
+	PCD8544_Buffer.Update_yMax = 0;
 }
 
-void PCD8544_UpdateArea(unsigned char xMin, unsigned char yMin, unsigned char xMax, unsigned char yMax) {
-	if (xMin < PCD8544_UpdateXmin) {
-		PCD8544_UpdateXmin = xMin;
+void PCD8544_UpdateArea(uint8_t xMin, uint8_t yMin, uint8_t xMax, uint8_t yMax, Buffer_t* buffer) {
+	if (xMin < buffer->Update_xMin) {
+		buffer->Update_xMin = xMin;
 	}
-	if (xMax > PCD8544_UpdateXmax) {
-		PCD8544_UpdateXmax = xMax;
+	if (xMax > buffer->Update_xMax) {
+		buffer->Update_xMax = xMax;
 	}
-	if (yMin < PCD8544_UpdateYmin) {
-		PCD8544_UpdateYmin = yMin;
+	if (yMin < buffer->Update_yMin) {
+		buffer->Update_yMin = yMin;
 	}
-	if (yMax > PCD8544_UpdateYmax) {
-		PCD8544_UpdateYmax = yMax;
+	if (yMax > buffer->Update_yMax) {
+		buffer->Update_yMax = yMax;
 	}
 }
 
 
 void PCD8544_Putc(char c, PCD8544_Pixel_t color, PCD8544_FontSize_t size) {
-	unsigned char c_height, c_width, i, b, j;
+	uint8_t c_height, c_width, i, b, j;
 	if (size == PCD8544_FontSize_3x5) {
 		c_width = PCD8544_CHAR3x5_WIDTH;
 		c_height = PCD8544_CHAR3x5_HEIGHT;
@@ -394,15 +364,19 @@ void PCD8544_Putc(char c, PCD8544_Pixel_t color, PCD8544_FontSize_t size) {
 		c_width = PCD8544_CHAR5x7_WIDTH;
 		c_height = PCD8544_CHAR5x7_HEIGHT;
 	}
-	if ((PCD8544_x + c_width) > PCD8544_WIDTH) {
+
+	if(PCD8544_y + c_height > PCD8544_HEIGHT) {
+		return;
+	}
+
+	if (PCD8544_x + c_width > PCD8544_WIDTH) {
 		//If at the end of a line of display, go to new line and set x to 0 position
 		PCD8544_y += c_height;
 		PCD8544_x = 0;
 	}
+
 	for (i = 0; i < c_width - 1; i++) {
-		if (c < 32) {
-			//b = _custom_chars[_font_size][(uint8_t)chr][i];
-		} else if (size == PCD8544_FontSize_3x5) {
+		if (size == PCD8544_FontSize_3x5) {
 			b = PCD8544_Font3x5[c - 32][i];
 		} else {
 			b = PCD8544_Font5x7[c - 32][i];
@@ -412,9 +386,9 @@ void PCD8544_Putc(char c, PCD8544_Pixel_t color, PCD8544_FontSize_t size) {
 		}
 		for (j = 0; j < c_height; j++) {
 			if (color == PCD8544_Pixel_Set) {
-				PCD8544_DrawPixel(PCD8544_x, (PCD8544_y + j), ((b >> j) & 1) ? PCD8544_Pixel_Set : PCD8544_Pixel_Clear);
+				PCD8544_DrawPixel(PCD8544_x, (PCD8544_y + j), ((b >> j) & 1) ? PCD8544_Pixel_Set : PCD8544_Pixel_Clear, &PCD8544_Buffer);
 			} else {
-				PCD8544_DrawPixel(PCD8544_x, (PCD8544_y + j), ((b >> j) & 1) ? PCD8544_Pixel_Clear : PCD8544_Pixel_Set);
+				PCD8544_DrawPixel(PCD8544_x, (PCD8544_y + j), ((b >> j) & 1) ? PCD8544_Pixel_Clear : PCD8544_Pixel_Set, &PCD8544_Buffer);
 			}
 		}
 		PCD8544_x++;
@@ -428,9 +402,9 @@ void PCD8544_Puts(char *c, PCD8544_Pixel_t color, PCD8544_FontSize_t size) {
 	}
 }
 
-void PCD8544_DrawLine(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1, PCD8544_Pixel_t color) {
-	short dx, dy;
-	short temp;
+void PCD8544_DrawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, PCD8544_Pixel_t color, Buffer_t *buffer) {
+	uint16_t dx, dy;
+	uint16_t temp;
 
 	if (x0 > x1) {
 		temp = x1;
@@ -448,14 +422,14 @@ void PCD8544_DrawLine(unsigned char x0, unsigned char y0, unsigned char x1, unsi
 
 	if (dx == 0) {
 		do {
-			PCD8544_DrawPixel(x0, y0, color);
+			PCD8544_DrawPixel(x0, y0, color, buffer);
 			y0++;
 		} while (y1 >= y0);
 		return;
 	}
 	if (dy == 0) {
 		do {
-			PCD8544_DrawPixel(x0, y0, color);
+			PCD8544_DrawPixel(x0, y0, color, buffer);
 			x0++;
 		} while (x1 >= x0);
 		return;
@@ -464,8 +438,8 @@ void PCD8544_DrawLine(unsigned char x0, unsigned char y0, unsigned char x1, unsi
 	/* Based on Bresenham's line algorithm  */
 	if (dx > dy) {
 		temp = 2 * dy - dx;
-		while (x0 != x1) {
-			PCD8544_DrawPixel(x0, y0, color);
+		while (x0 <= x1) {
+			PCD8544_DrawPixel(x0, y0, color, buffer);
 			x0++;
 			if (temp > 0) {
 				y0++;
@@ -474,11 +448,11 @@ void PCD8544_DrawLine(unsigned char x0, unsigned char y0, unsigned char x1, unsi
 				temp += 2 * dy;
 			}
 		}
-		PCD8544_DrawPixel(x0, y0, color);
+
 	} else {
 		temp = 2 * dx - dy;
-		while (y0 != y1) {
-			PCD8544_DrawPixel(x0, y0, color);
+		while (y0 <= y1) {
+			PCD8544_DrawPixel(x0, y0, color, buffer);
 			y0++;
 			if (temp > 0) {
 				x0++;
@@ -487,34 +461,34 @@ void PCD8544_DrawLine(unsigned char x0, unsigned char y0, unsigned char x1, unsi
 				temp += 2 * dy;
 			}
 		}
-		PCD8544_DrawPixel(x0, y0, color);
+
 	}
 }
 
-void PCD8544_DrawRectangle(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1, PCD8544_Pixel_t color) {
-	PCD8544_DrawLine(x0, y0, x1, y0, color); 	//Top
-	PCD8544_DrawLine(x0, y0, x0, y1, color);	//Left
-	PCD8544_DrawLine(x1, y0, x1, y1, color);	//Right
-	PCD8544_DrawLine(x0, y1, x1, y1, color);	//Bottom
+void PCD8544_DrawRectangle(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, PCD8544_Pixel_t color, Buffer_t *buffer) {
+	PCD8544_DrawLine(x0, y0, x1, y0, color, buffer); 	//Top
+	PCD8544_DrawLine(x0, y0, x0, y1, color, buffer);	//Left
+	PCD8544_DrawLine(x1, y0, x1, y1, color, buffer);	//Right
+	PCD8544_DrawLine(x0, y1, x1, y1, color, buffer);	//Bottom
 }
 
-void PCD8544_DrawFilledRectangle(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1, PCD8544_Pixel_t color) {
+void PCD8544_DrawFilledRectangle(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, PCD8544_Pixel_t color, Buffer_t *buffer) {
 	for (; y0 < y1; y0++) {
-		PCD8544_DrawLine(x0, y0, x1, y0, color);
+		PCD8544_DrawLine(x0, y0, x1, y0, color, buffer);
 	}
 }
         
-void PCD8544_DrawCircle(char x0, char y0, char r, PCD8544_Pixel_t color) {
+void PCD8544_DrawCircle(int8_t x0, int8_t y0, int8_t r, PCD8544_Pixel_t color, Buffer_t *buffer) {
 	int16_t f = 1 - r;
 	int16_t ddF_x = 1;
 	int16_t ddF_y = -2 * r;
 	int16_t x = 0;
 	int16_t y = r;
 
-    PCD8544_DrawPixel(x0, y0 + r, color);
-    PCD8544_DrawPixel(x0, y0 - r, color);
-    PCD8544_DrawPixel(x0 + r, y0, color);
-    PCD8544_DrawPixel(x0 - r, y0, color);
+    PCD8544_DrawPixel(x0, y0 + r, color, buffer);
+    PCD8544_DrawPixel(x0, y0 - r, color, buffer);
+    PCD8544_DrawPixel(x0 + r, y0, color, buffer);
+    PCD8544_DrawPixel(x0 - r, y0, color, buffer);
 
     while (x < y) {
         if (f >= 0) {
@@ -526,30 +500,30 @@ void PCD8544_DrawCircle(char x0, char y0, char r, PCD8544_Pixel_t color) {
         ddF_x += 2;
         f += ddF_x;
 
-        PCD8544_DrawPixel(x0 + x, y0 + y, color);
-        PCD8544_DrawPixel(x0 - x, y0 + y, color);
-        PCD8544_DrawPixel(x0 + x, y0 - y, color);
-        PCD8544_DrawPixel(x0 - x, y0 - y, color);
+        PCD8544_DrawPixel(x0 + x, y0 + y, color, buffer);
+        PCD8544_DrawPixel(x0 - x, y0 + y, color, buffer);
+        PCD8544_DrawPixel(x0 + x, y0 - y, color, buffer);
+        PCD8544_DrawPixel(x0 - x, y0 - y, color, buffer);
 
-        PCD8544_DrawPixel(x0 + y, y0 + x, color);
-        PCD8544_DrawPixel(x0 - y, y0 + x, color);
-        PCD8544_DrawPixel(x0 + y, y0 - x, color);
-        PCD8544_DrawPixel(x0 - y, y0 - x, color);
+        PCD8544_DrawPixel(x0 + y, y0 + x, color, buffer);
+        PCD8544_DrawPixel(x0 - y, y0 + x, color, buffer);
+        PCD8544_DrawPixel(x0 + y, y0 - x, color, buffer);
+        PCD8544_DrawPixel(x0 - y, y0 - x, color, buffer);
     }
 }
 
-void PCD8544_DrawFilledCircle(char x0, char y0, char r, PCD8544_Pixel_t color) {
+void PCD8544_DrawFilledCircle(int8_t x0, int8_t y0, int8_t r, PCD8544_Pixel_t color, Buffer_t *buffer) {
 	int16_t f = 1 - r;
 	int16_t ddF_x = 1;
 	int16_t ddF_y = -2 * r;
 	int16_t x = 0;
 	int16_t y = r;
 
-    PCD8544_DrawPixel(x0, y0 + r, color);
-    PCD8544_DrawPixel(x0, y0 - r, color);
-    PCD8544_DrawPixel(x0 + r, y0, color);
-    PCD8544_DrawPixel(x0 - r, y0, color);
-    PCD8544_DrawLine(x0 - r, y0, x0 + r, y0, color);
+    PCD8544_DrawPixel(x0, y0 + r, color, buffer);
+    PCD8544_DrawPixel(x0, y0 - r, color, buffer);
+    PCD8544_DrawPixel(x0 + r, y0, color, buffer);
+    PCD8544_DrawPixel(x0 - r, y0, color, buffer);
+    PCD8544_DrawLine(x0 - r, y0, x0 + r, y0, color, buffer);
 
     while (x < y) {
         if (f >= 0) {
@@ -561,11 +535,11 @@ void PCD8544_DrawFilledCircle(char x0, char y0, char r, PCD8544_Pixel_t color) {
         ddF_x += 2;
         f += ddF_x;
 
-        PCD8544_DrawLine(x0 - x, y0 + y, x0 + x, y0 + y, color);
-        PCD8544_DrawLine(x0 + x, y0 - y, x0 - x, y0 - y, color);
+        PCD8544_DrawLine(x0 - x, y0 + y, x0 + x, y0 + y, color, buffer);
+        PCD8544_DrawLine(x0 + x, y0 - y, x0 - x, y0 - y, color, buffer);
 
-        PCD8544_DrawLine(x0 + y, y0 + x, x0 - y, y0 + x, color);
-        PCD8544_DrawLine(x0 + y, y0 - x, x0 - y, y0 - x, color);
+        PCD8544_DrawLine(x0 + y, y0 + x, x0 - y, y0 + x, color, buffer);
+        PCD8544_DrawLine(x0 + y, y0 - x, x0 - y, y0 - x, color, buffer);
     }
 }
 

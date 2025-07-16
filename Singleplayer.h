@@ -1,3 +1,4 @@
+#include<stdint.h>
 
 #ifndef SINGLEPLAYER_H
 
@@ -54,11 +55,11 @@ typedef struct{
 
 //collision points structure, [0] = x, [1] = y
 typedef struct {
-	int p1[2];
-	int p2[2];
-	int p3[2];
-	int p4[2];
-	int p5[2];
+	uint8_t p1[2];
+	uint8_t p2[2];
+	uint8_t p3[2];
+	uint8_t p4[2];
+	uint8_t p5[2];
 } collision_points_t;
 
 typedef struct {

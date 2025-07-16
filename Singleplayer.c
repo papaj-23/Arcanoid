@@ -6,9 +6,9 @@
 #include "pcd8544.h"
 #include "input.h"
 
-platform_t platform;
-ball_t ball;
-collision_points_t collision_points;
+static platform_t platform;
+static ball_t ball;
+static collision_points_t collision_points;
 bool sp_gameover = false;
 
 extern joystick_t joystick1;
@@ -20,7 +20,8 @@ static void CalculateCollisionPoints(void);
 static void BallReflection(void);
 static bool PlatformReflection(void);
 static void DiscardBlocks(void);
-static bool BlocksEqual(BlockID_t, BlockID_t);
+static bool BlocksEqual(BlockID_t a, BlockID_t b);
+static bool Check_Collision_Point(uint8_t *cp);
 
 //collision points states
 bool px_states[5] = {
@@ -32,11 +33,11 @@ bool px_states[5] = {
 };
 
 int shift_velocity = 0;
-static int score = 0;
+static unsigned int score = 0;
 bool block_reflection = false;
 
 void Sp_GameInit(){
-	PCD8544_ClearBuffer();
+	PCD8544_ClearBuffer(&PCD8544_Buffer);
 	score = 0;
 
 	ball.x = BALL_X_DEFAULT;
@@ -56,20 +57,20 @@ void Sp_GameInit(){
 
 
 	//limiting lines
-	PCD8544_DrawLine(0, 0, 0, 47, PCD8544_Pixel_Set);
-	PCD8544_DrawLine(1, 0, 83, 0, PCD8544_Pixel_Set);
-	PCD8544_DrawLine(83, 1, 83, 47, PCD8544_Pixel_Set);
+	PCD8544_DrawLine(0, 0, 0, 47, PCD8544_Pixel_Set, &PCD8544_Buffer);
+	PCD8544_DrawLine(1, 0, 83, 0, PCD8544_Pixel_Set, &PCD8544_Buffer);
+	PCD8544_DrawLine(83, 1, 83, 47, PCD8544_Pixel_Set, &PCD8544_Buffer);
 
 	//platform
-	PCD8544_DrawLine(platform.x, PLATFORM_Y, platform.x + platform.width - 1, PLATFORM_Y, PCD8544_Pixel_Set);
+	PCD8544_DrawLine(platform.x, PLATFORM_Y, platform.x + platform.width - 1, PLATFORM_Y, PCD8544_Pixel_Set, &PCD8544_Buffer);
 
 	//ball
-	PCD8544_DrawFilledRectangle(ball.x, ball.y, ball.x + BALL_SIZE - 1, ball.y + BALL_SIZE, PCD8544_Pixel_Set);
+	PCD8544_DrawFilledRectangle(ball.x, ball.y, ball.x + BALL_SIZE - 1, ball.y + BALL_SIZE, PCD8544_Pixel_Set, &PCD8544_Buffer);
 
 	//blocks
 	for(int i = BLOCK_SPACE+1; i < BLOCK_ROWS*(BLOCK_HEIGHT + BLOCK_SPACE); i += BLOCK_HEIGHT + BLOCK_SPACE){
 		for(int j = BLOCK_SPACE+1; j < PCD8544_WIDTH - (BLOCK_WIDTH + BLOCK_SPACE); j += BLOCK_WIDTH + BLOCK_SPACE){
-			PCD8544_DrawFilledRectangle(j, i, j + BLOCK_WIDTH - 1, i + BLOCK_HEIGHT, PCD8544_Pixel_Set);
+			PCD8544_DrawFilledRectangle(j, i, j + BLOCK_WIDTH - 1, i + BLOCK_HEIGHT, PCD8544_Pixel_Set, &PCD8544_Buffer);
 		}
 	}
 
@@ -116,8 +117,8 @@ void Sp_PlatformMove() {
 		platform.x_previous = platform.x;
 		platform.x += platform.velocity;
 
-		PCD8544_DrawLine(platform.x_previous, PLATFORM_Y, platform.x_previous + platform.width - 1, PLATFORM_Y, PCD8544_Pixel_Clear);
-		PCD8544_DrawLine(platform.x, PLATFORM_Y, platform.x + platform.width - 1, PLATFORM_Y, PCD8544_Pixel_Set);
+		PCD8544_DrawLine(platform.x_previous, PLATFORM_Y, platform.x_previous + platform.width - 1, PLATFORM_Y, PCD8544_Pixel_Clear, &PCD8544_Buffer);
+		PCD8544_DrawLine(platform.x, PLATFORM_Y, platform.x + platform.width - 1, PLATFORM_Y, PCD8544_Pixel_Set, &PCD8544_Buffer);
 	}
 }
 
@@ -146,10 +147,10 @@ void Sp_InitShift() {
 		platform.x += shift_velocity;
 		ball.x += shift_velocity;
 
-		PCD8544_DrawLine(platform.x_previous, PLATFORM_Y, platform.x_previous + platform.width - 1, PLATFORM_Y, PCD8544_Pixel_Clear);
-		PCD8544_DrawFilledRectangle(ball.x_previous, ball.y, ball.x_previous + BALL_SIZE - 1, ball.y + BALL_SIZE, PCD8544_Pixel_Clear);
-		PCD8544_DrawLine(platform.x, PLATFORM_Y, platform.x + platform.width - 1, PLATFORM_Y, PCD8544_Pixel_Set);
-		PCD8544_DrawFilledRectangle(ball.x, ball.y, ball.x + BALL_SIZE - 1, ball.y + BALL_SIZE, PCD8544_Pixel_Set);
+		PCD8544_DrawLine(platform.x_previous, PLATFORM_Y, platform.x_previous + platform.width - 1, PLATFORM_Y, PCD8544_Pixel_Clear, &PCD8544_Buffer);
+		PCD8544_DrawFilledRectangle(ball.x_previous, ball.y, ball.x_previous + BALL_SIZE - 1, ball.y + BALL_SIZE, PCD8544_Pixel_Clear, &PCD8544_Buffer);
+		PCD8544_DrawLine(platform.x, PLATFORM_Y, platform.x + platform.width - 1, PLATFORM_Y, PCD8544_Pixel_Set, &PCD8544_Buffer);
+		PCD8544_DrawFilledRectangle(ball.x, ball.y, ball.x + BALL_SIZE - 1, ball.y + BALL_SIZE, PCD8544_Pixel_Set, &PCD8544_Buffer);
 	}
 }
 
@@ -176,8 +177,8 @@ void Sp_BallMove() {
 	ball.y += ball.raster * sign_y;
 
 	if(ball.y > 0 && ball.y < PCD8544_HEIGHT - 2) {
-		PCD8544_DrawFilledRectangle(ball.x_previous, ball.y_previous, ball.x_previous + BALL_SIZE - 1, ball.y_previous + BALL_SIZE, PCD8544_Pixel_Clear);
-		PCD8544_DrawFilledRectangle(ball.x, ball.y, ball.x + BALL_SIZE - 1, ball.y + BALL_SIZE, PCD8544_Pixel_Set);
+		PCD8544_DrawFilledRectangle(ball.x_previous, ball.y_previous, ball.x_previous + BALL_SIZE - 1, ball.y_previous + BALL_SIZE, PCD8544_Pixel_Clear, &PCD8544_Buffer);
+		PCD8544_DrawFilledRectangle(ball.x, ball.y, ball.x + BALL_SIZE - 1, ball.y + BALL_SIZE, PCD8544_Pixel_Set, &PCD8544_Buffer);
 	}
 
 	else if(ball.y >= PCD8544_HEIGHT - 2){
@@ -253,33 +254,41 @@ static void CalculateCollisionPoints() {
 		break;
 	}
 }
+//Check state of collision point
+static bool Check_Collision_Point(uint8_t *cp) {
+	if(PCD8544_Buffer.Content[cp[0] + (cp[1] / 8) * PCD8544_WIDTH] & 1 << (cp[1] % 8)) {
+		return true;
+	} else {
+		return false;
+	}
+}
 
 static void BallReflection() {
 	int right_rotation = 0;
 	int left_rotation = 0;
 	bool reverse = false;
 
-	if(PCD8544_Buffer[collision_points.p1[0] + (collision_points.p1[1] / 8)*PCD8544_WIDTH ] & 1 << (collision_points.p1[1] % 8)) {
+	if(Check_Collision_Point(collision_points.p1)) {
 		right_rotation++;
 		px_states[0] = true;
 	}
 
-	if(PCD8544_Buffer[collision_points.p2[0] + (collision_points.p2[1] / 8)*PCD8544_WIDTH ] & 1 << (collision_points.p2[1] % 8)) {
+	if(Check_Collision_Point(collision_points.p2)) {
 		right_rotation++;
 		px_states[1] = true;
 	}
 
-	if(PCD8544_Buffer[collision_points.p4[0] + (collision_points.p4[1] / 8)*PCD8544_WIDTH ] & 1 << (collision_points.p4[1] % 8)) {
+	if(Check_Collision_Point(collision_points.p4)) {
 		left_rotation++;
 		px_states[3] = true;
 	}
 
-	if(PCD8544_Buffer[collision_points.p5[0] + (collision_points.p5[1] / 8)*PCD8544_WIDTH ] & 1 << (collision_points.p5[1] % 8)) {
+	if(Check_Collision_Point(collision_points.p5)) {
 		left_rotation++;
 		px_states[4] = true;
 	}
 
-	if(PCD8544_Buffer[collision_points.p3[0] + (collision_points.p3[1] / 8)*PCD8544_WIDTH ] & 1 << (collision_points.p3[1] % 8)) {
+	if(Check_Collision_Point(collision_points.p3)) {
 		reverse = true;
 		px_states[2] = true;
 	}
@@ -329,7 +338,7 @@ static void DiscardBlocks() {
 	BlockID_t hit_blocks[4];
 	int block_count = 0;
 
-	int* points[] = {
+	uint8_t* points[] = {
 		collision_points.p1,
 		collision_points.p2,
 		collision_points.p3,
@@ -363,7 +372,7 @@ static void DiscardBlocks() {
 				// wyczyszczenie bloku
 				int block_x = BLOCK_SPACE + 1 + col * (BLOCK_WIDTH + BLOCK_SPACE);
 				int block_y = BLOCK_SPACE + 1 + row * (BLOCK_HEIGHT + BLOCK_SPACE);
-				PCD8544_DrawFilledRectangle(block_x, block_y, block_x + BLOCK_WIDTH - 1, block_y + BLOCK_HEIGHT, PCD8544_Pixel_Clear);
+				PCD8544_DrawFilledRectangle(block_x, block_y, block_x + BLOCK_WIDTH - 1, block_y + BLOCK_HEIGHT, PCD8544_Pixel_Clear, &PCD8544_Buffer);
 			}
 		}
 	}

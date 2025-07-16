@@ -5,8 +5,8 @@
 #include "pcd8544.h"
 #include "stm32f3xx_hal_tim.h"
 
-const unsigned int MENU_STATES_MAIN = 4;
-const unsigned int MENU_STATES_SETTINGS = 3;
+static const unsigned int MENU_STATES_MAIN = 4;
+static const unsigned int MENU_STATES_SETTINGS = 3;
 
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim6;
@@ -44,7 +44,7 @@ static void Set_refreshing() {
 }
 
 static void Welcome_Screen() {
-	PCD8544_ClearBuffer();
+	PCD8544_ClearBuffer(&PCD8544_Buffer);
 	gotoXY(18, 15);
 	PCD8544_Puts("Arcanoid", PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 	gotoXY(26, 26);
@@ -182,7 +182,7 @@ static void Menu_Press_Button1() {
 static void Menu_Handler() {
 	switch(Current_Menu_State) {
 	case SINGLEPLAYER:
-		PCD8544_ClearBuffer();
+		PCD8544_ClearBuffer(&PCD8544_Buffer);
 		gotoXY(3, 1);
 		PCD8544_Puts("SINGLEPLAYER", PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 		gotoXY(3, 10);
@@ -193,7 +193,7 @@ static void Menu_Handler() {
 		PCD8544_Puts("EXIT", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 		break;
 	case MULTIPLAYER:
-		PCD8544_ClearBuffer();
+		PCD8544_ClearBuffer(&PCD8544_Buffer);
 		gotoXY(3, 2);
 		PCD8544_Puts("SINGLEPLAYER", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 		gotoXY(3, 9);
@@ -205,7 +205,7 @@ static void Menu_Handler() {
 		break;
 
 	case OPTIONS:
-		PCD8544_ClearBuffer();
+		PCD8544_ClearBuffer(&PCD8544_Buffer);
 		gotoXY(3, 2);
 		PCD8544_Puts("SINGLEPLAYER", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 		gotoXY(3, 10);
@@ -217,7 +217,7 @@ static void Menu_Handler() {
 		break;
 
 	case EXIT:
-		PCD8544_ClearBuffer();
+		PCD8544_ClearBuffer(&PCD8544_Buffer);
 		gotoXY(3, 2);
 		PCD8544_Puts("SINGLEPLAYER", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 		gotoXY(3, 10);
@@ -229,7 +229,7 @@ static void Menu_Handler() {
 		break;
 
 	case DIFFICULTY_EASY:
-		PCD8544_ClearBuffer();
+		PCD8544_ClearBuffer(&PCD8544_Buffer);
 		gotoXY(3, 1);
 		PCD8544_Puts("EASY", PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 		gotoXY(3, 10);
@@ -239,7 +239,7 @@ static void Menu_Handler() {
 		break;
 
 	case DIFFICULTY_MEDIUM:
-		PCD8544_ClearBuffer();
+		PCD8544_ClearBuffer(&PCD8544_Buffer);
 		gotoXY(3, 2);
 		PCD8544_Puts("EASY", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 		gotoXY(3, 9);
@@ -249,7 +249,7 @@ static void Menu_Handler() {
 		break;
 
 	case DIFFICULTY_HARD:
-		PCD8544_ClearBuffer();
+		PCD8544_ClearBuffer(&PCD8544_Buffer);
 		gotoXY(3, 2);
 		PCD8544_Puts("EASY", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 		gotoXY(3, 10);
@@ -302,7 +302,7 @@ void Main_Game() {
 	case GAME:
 		//remove caption from init phase
 		if(!game_flags.remove_caption) {
-			PCD8544_DrawFilledRectangle(8, 26, 77, 32, PCD8544_Pixel_Clear);
+			PCD8544_DrawFilledRectangle(8, 26, 77, 32, PCD8544_Pixel_Clear, &PCD8544_Buffer);
 			game_flags.remove_caption = true;
 		}
 

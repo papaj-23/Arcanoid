@@ -35,19 +35,17 @@
 #define PCD8544_LCD_TEMP			0x02	// Range: 0-3 (0x00-0x03)
 #define PCD8544_LCD_CONTRAST		0x46	// Range: 0-127 (0x00-0x7F)
 
-#define PCD8544_CHAR5x7_WIDTH		6 //5*8
+#define PCD8544_CHAR5x7_WIDTH		6 //5*7
 #define PCD8544_CHAR5x7_HEIGHT		8
 #define PCD8544_CHAR3x5_WIDTH		4 //3*5
 #define PCD8544_CHAR3x5_HEIGHT		6
 
+#define PCD8544_WIDTH				84
+#define PCD8544_HEIGHT				48
+#define PCD8544_BUFFER_SIZE 		PCD8544_WIDTH * PCD8544_HEIGHT / 8
 
-
-extern const uint8_t PCD8544_Font5x7 [97][PCD8544_CHAR5x7_WIDTH];
+extern const uint8_t PCD8544_Font5x7 [97][5];
 extern const uint8_t PCD8544_Font3x5[106][3];
-
-
-
-
 
 typedef enum {
 	PCD8544_COMMAND = 0,
@@ -73,7 +71,7 @@ typedef enum {
  */
 typedef enum {
 	PCD8544_Pixel_Clear = 0,
-	PCD8544_Pixel_Set = 1
+	PCD8544_Pixel_Set = !PCD8544_Pixel_Clear
 } PCD8544_Pixel_t;
 
 /**
@@ -82,7 +80,7 @@ typedef enum {
  */
 typedef enum {
 	PCD8544_FontSize_5x7 = 0,
-	PCD8544_FontSize_3x5 = 1
+	PCD8544_FontSize_3x5 = !PCD8544_FontSize_5x7
 } PCD8544_FontSize_t;
 
 /**
@@ -93,7 +91,13 @@ typedef enum {
 	PCD8544_Invert_No
 } PCD8544_Invert_t;
 
-
+typedef struct {
+	uint8_t Content[PCD8544_BUFFER_SIZE];
+	uint8_t Update_xMin;
+	uint8_t Update_xMax;
+	uint8_t Update_yMin;
+	uint8_t Update_yMax;
+} Buffer_t;
 
 static const unsigned char ASCII[][5] =
 {
@@ -202,7 +206,7 @@ static const unsigned char ASCII[][5] =
 };
 
 
-
+extern Buffer_t PCD8544_Buffer;
 
 #define  PCDPORT GPIOB
 
@@ -216,34 +220,36 @@ static const unsigned char ASCII[][5] =
 #define LCD_D     1
 #define LCD_CMD 0
 
-#define PCD8544_WIDTH				84
-#define PCD8544_HEIGHT				48
-
 #define LCD_X     84
 #define LCD_Y     48
 
-#define PCD8544_BUFFER_SIZE 		PCD8544_WIDTH * PCD8544_HEIGHT / 8
-
 #define LCD_CONTRAST 0XC6 //0X00 - 0XFF
 
+// === SPI / GPIO / Init ===
+uint8_t spi_soft(uint8_t dat);
+void LcdWrite(uint8_t dc, uint8_t data);
 void LcdClear(void);
-void LcdWrite (unsigned char dc, uint8_t data);
 void LcdInitialise(void);
 void gotoXY(int x, int y);
-void PCD8544_UpdateArea(unsigned char xMin, unsigned char yMin, unsigned char xMax, unsigned char yMax);
-void PCD8544_Invert(PCD8544_Invert_t invert);
-void PCD8544_DrawPixel(unsigned char x, unsigned char y, PCD8544_Pixel_t pixel);
-void PCD8544_Home(void);
+
+// === Core buffer operations ===
+void PCD8544_DrawPixel(uint8_t x, uint8_t y, PCD8544_Pixel_t pixel, Buffer_t *buffer);
+void PCD8544_ClearBuffer(Buffer_t *buffer);
+void PCD8544_UpdateArea(uint8_t xMin, uint8_t yMin, uint8_t xMax, uint8_t yMax, Buffer_t* buffer);
 void PCD8544_Refresh(void);
+void PCD8544_Home(void);
+void PCD8544_Invert(PCD8544_Invert_t invert);
+
+// === Text ===
 void PCD8544_Putc(char c, PCD8544_Pixel_t color, PCD8544_FontSize_t size);
 void PCD8544_Puts(char *c, PCD8544_Pixel_t color, PCD8544_FontSize_t size);
-void PCD8544_DrawLine(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1, PCD8544_Pixel_t color);
-void PCD8544_DrawRectangle(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1, PCD8544_Pixel_t color);
-void PCD8544_DrawFilledRectangle(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1, PCD8544_Pixel_t color);
-void PCD8544_DrawCircle(char x0, char y0, char r, PCD8544_Pixel_t color);
-void PCD8544_DrawFilledCircle(char x0, char y0, char r, PCD8544_Pixel_t color);
-void PCD8544_ClearBuffer();
 
-extern uint8_t PCD8544_Buffer[PCD8544_BUFFER_SIZE];
+// === Primitives ===
+void PCD8544_DrawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, PCD8544_Pixel_t color, Buffer_t *buffer);
+void PCD8544_DrawRectangle(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, PCD8544_Pixel_t color, Buffer_t *buffer);
+void PCD8544_DrawFilledRectangle(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, PCD8544_Pixel_t color, Buffer_t *buffer);
+void PCD8544_DrawCircle(int8_t x0, int8_t y0, int8_t r, PCD8544_Pixel_t color, Buffer_t *buffer);
+void PCD8544_DrawFilledCircle(int8_t x0, int8_t y0, int8_t r, PCD8544_Pixel_t color, Buffer_t *buffer);
+
 
 #endif
