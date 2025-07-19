@@ -381,9 +381,7 @@ void PCD8544_Putc(char c, PCD8544_Pixel_t color, PCD8544_FontSize_t size) {
 		} else {
 			b = PCD8544_Font5x7[c - 32][i];
 		}
-		if (b == 0x00 && (c != 0 && c != 32)) {
-			continue;
-		}
+
 		for (j = 0; j < c_height; j++) {
 			if (color == PCD8544_Pixel_Set) {
 				PCD8544_DrawPixel(PCD8544_x, (PCD8544_y + j), ((b >> j) & 1) ? PCD8544_Pixel_Set : PCD8544_Pixel_Clear, &PCD8544_Buffer);
@@ -543,4 +541,31 @@ void PCD8544_DrawFilledCircle(int8_t x0, int8_t y0, int8_t r, PCD8544_Pixel_t co
     }
 }
 
+void PCD8544_DrawX(uint8_t x0, uint8_t y0, uint8_t shoulder_lenght /*1 is 3x3 X signature*/, PCD8544_Pixel_t color, Buffer_t *buffer) {
+	if(shoulder_lenght < 1) {
+		return;
+	}
+
+	PCD8544_DrawPixel(x0, y0, color, buffer);
+	for(int i = 1; i <= shoulder_lenght; i++) {
+		PCD8544_DrawPixel(x0 + i, y0 + i, color, buffer);
+		PCD8544_DrawPixel(x0 + i, y0 - i, color, buffer);
+		PCD8544_DrawPixel(x0 - i, y0 + i, color, buffer);
+		PCD8544_DrawPixel(x0 - i, y0 - i, color, buffer);
+	}
+}
+
+void PCD8544_DrawCross(uint8_t x0, uint8_t y0, uint8_t shoulder_lenght /*1 is 3x3 + signature*/, PCD8544_Pixel_t color, Buffer_t *buffer) {
+	if(shoulder_lenght < 1) {
+		return;
+	}
+
+	PCD8544_DrawPixel(x0, y0, color, buffer);
+	for(int i = 1; i <= shoulder_lenght; i++) {
+		PCD8544_DrawPixel(x0 + i, y0, color, buffer);
+		PCD8544_DrawPixel(x0 - i, y0, color, buffer);
+		PCD8544_DrawPixel(x0, y0 + i, color, buffer);
+		PCD8544_DrawPixel(x0, y0 - i, color, buffer);
+	}
+}
 

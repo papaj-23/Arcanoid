@@ -1,6 +1,10 @@
 #include "stm32f3xx_hal.h"
 #include "input.h"
 
+#define JOYSTICK_CENTER_VALUE 1990
+#define BUTTON_DEBOUNCING_TIME 200
+#define JOYSTICK_DEBOUNCING_TIME 250
+
 static recent_times_t RecentTimes = {0};
 
 bool Button1_Debouncing() {

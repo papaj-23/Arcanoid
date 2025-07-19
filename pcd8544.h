@@ -250,6 +250,7 @@ void PCD8544_DrawRectangle(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, PCD85
 void PCD8544_DrawFilledRectangle(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, PCD8544_Pixel_t color, Buffer_t *buffer);
 void PCD8544_DrawCircle(int8_t x0, int8_t y0, int8_t r, PCD8544_Pixel_t color, Buffer_t *buffer);
 void PCD8544_DrawFilledCircle(int8_t x0, int8_t y0, int8_t r, PCD8544_Pixel_t color, Buffer_t *buffer);
-
+void PCD8544_DrawX(uint8_t x0, uint8_t y0, uint8_t shoulder_lenght, PCD8544_Pixel_t color, Buffer_t *buffer);
+void PCD8544_DrawCross(uint8_t x0, uint8_t y0, uint8_t shoulder_lenght, PCD8544_Pixel_t color, Buffer_t *buffer);
 
 #endif

@@ -4,10 +4,6 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#define JOYSTICK_CENTER_VALUE 1990
-#define BUTTON_DEBOUNCING_TIME 200
-#define JOYSTICK_DEBOUNCING_TIME 250
-
 typedef struct{
 	uint32_t Joystick1_Button;
 	uint32_t Joystick1_Yaxis;

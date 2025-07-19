@@ -69,7 +69,6 @@ void Button1_Handler() {
 		case INIT:
 			Current_Game_State = GAME;
 			game_flags.change_refreshing_freq = false;
-			game_flags.summary_done = false;
 			break;
 
 		case GAME:
@@ -77,8 +76,11 @@ void Button1_Handler() {
 			break;
 
 		case GAMEOVER:
-			Current_Game_State = MENU;
-			game_flags.change_refreshing_freq = false;
+			if(game_flags.summary_done) {
+				Current_Game_State = MENU;
+				game_flags.change_refreshing_freq = false;
+				game_flags.summary_done = false;
+			}
 			break;
 		}
 
@@ -291,6 +293,11 @@ void Main_Game() {
 			sp_flags.game_init_done = true;
 		}
 
+		if(Is_Game_Restarted()) {
+			Game_Restart();
+			Set_Game_Restart(false);
+		}
+
 		//choosing start point
 		if(sp_flags.init_shift) {
 			Sp_InitShift();
@@ -302,13 +309,14 @@ void Main_Game() {
 	case GAME:
 		//remove caption from init phase
 		if(!game_flags.remove_caption) {
-			PCD8544_DrawFilledRectangle(8, 26, 77, 32, PCD8544_Pixel_Clear, &PCD8544_Buffer);
+			PCD8544_DrawFilledRectangle(4, 24, 73, 38, PCD8544_Pixel_Clear, &PCD8544_Buffer);
 			game_flags.remove_caption = true;
 		}
 
 		//ruch platformy
 		if(sp_flags.platform_move) {
 			Sp_PlatformMove();
+			Sp_Display_Score();
 			sp_flags.platform_move = false;
 		}
 
@@ -317,9 +325,12 @@ void Main_Game() {
 			sp_flags.ball_move = false;
 		}
 
-		if(sp_gameover) {
+		if(Is_Game_Restarted()) {
+			Current_Game_State = INIT;
+		}
+		else if(Is_Game_Over()) {
 			Current_Game_State = GAMEOVER;
-			sp_gameover = false;
+			Set_Game_Over(false);
 		}
 
 		break;
