@@ -34,7 +34,7 @@
 //board limits
 #define RIGHT_EDGE 83
 #define BOTTOM_EDGE 47
-#define BOARD_DIVISON_LINE 75
+#define BOARD_DIVISON_LINE 74
 
 #define LIVES_AMOUNT 2
 
@@ -58,6 +58,7 @@ static bool BlocksEqual(BlockID_t a, BlockID_t b);
 static bool Check_Collision_Point(uint8_t *cp);
 static void Ball_Init(int x, int y, int x_prevoius, int y_prevoius);
 static void Platform_Init(int x, int x_prevoius, int width, int velocity, int shift_velocity);
+static void Sp_Display_Lives(void);
 
 //collision points states
 static bool px_states[5] = {
@@ -81,6 +82,14 @@ void Sp_Display_Score() {
 		PCD8544_Putc(score_buffer[i], PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 		y += 8;
 		i++;
+	}
+}
+
+static void Sp_Display_Lives() {
+	PCD8544_DrawFilledRectangle(77, 26, 83, 48, PCD8544_Pixel_Clear, &PCD8544_Buffer);
+	for(int i = 0; i <= GUI_data.remaining_lives; i++) {
+		gotoXY(77, 40 - i * 7/*PCD8544_CHAR5x7_HEIGHT*/);
+		PCD8544_Putc(HEART_ID, PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 	}
 }
 
@@ -121,7 +130,7 @@ void Sp_GameInit(){
 
 	//blocks
 	for(int i = BLOCK_SPACE+1; i < BLOCK_ROWS*(BLOCK_HEIGHT + BLOCK_SPACE); i += BLOCK_HEIGHT + BLOCK_SPACE) {
-		for(int j = BLOCK_SPACE+1; j < BOARD_DIVISON_LINE - (BLOCK_WIDTH + BLOCK_SPACE); j += BLOCK_WIDTH + BLOCK_SPACE) {
+		for(int j = BLOCK_SPACE+1; j <= BOARD_DIVISON_LINE - (BLOCK_WIDTH + BLOCK_SPACE); j += BLOCK_WIDTH + BLOCK_SPACE) {
 			PCD8544_DrawFilledRectangle(j, i, j + BLOCK_WIDTH - 1, i + BLOCK_HEIGHT, PCD8544_Pixel_Set, &PCD8544_Buffer);
 		}
 	}
@@ -131,18 +140,15 @@ void Sp_GameInit(){
 	PCD8544_Puts("Press OK to start", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 	gotoXY(4, 32);
 	PCD8544_Puts("Swipe R/L to move", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
+
+	Sp_Display_Lives();
+	Sp_Display_Score();
 }
 
 void Game_Restart() {
 	//Clear platform/ball
-	if(!(platform.velocity < 0 && platform.x < 4)){
-		PCD8544_DrawLine(platform.x - 3, PLATFORM_Y, platform.x + platform.width + 2, PLATFORM_Y, PCD8544_Pixel_Clear, &PCD8544_Buffer); //including all possible positions at the time*
-	}
-	else {
-		PCD8544_DrawLine(platform.x, PLATFORM_Y, platform.x + platform.width + 2, PLATFORM_Y, PCD8544_Pixel_Clear, &PCD8544_Buffer); //*exception - moving platform against left edge
-	}
-
-	PCD8544_DrawFilledRectangle(ball.x - 1, ball.y - 1, ball.x + BALL_SIZE, ball.y + BALL_SIZE + 1, PCD8544_Pixel_Clear, &PCD8544_Buffer); //including all possible positions at the time
+	PCD8544_DrawFilledRectangle(1, PLATFORM_Y - 2, BOARD_DIVISON_LINE - 1, PCD8544_HEIGHT, PCD8544_Pixel_Clear, &PCD8544_Buffer); //including all possible positions at the time
+	//PCD8544_DrawFilledRectangle(ball.x - 1, ball.y - 1, ball.x + BALL_SIZE, ball.y + BALL_SIZE + 1, PCD8544_Pixel_Clear, &PCD8544_Buffer); //including all possible positions at the time
 
 	//Reset ball/platform positions to default
 	Ball_Init(BALL_X_DEFAULT, BALL_Y_DEFAULT, 0, 0);
@@ -153,6 +159,7 @@ void Game_Restart() {
 	PCD8544_DrawFilledRectangle(ball.x, ball.y, ball.x + BALL_SIZE - 1, ball.y + BALL_SIZE, PCD8544_Pixel_Set, &PCD8544_Buffer);
 
 	GUI_data.remaining_lives--;
+	Sp_Display_Lives();
 }
 
 void Sp_PlatformMove() {
@@ -491,6 +498,7 @@ void Sp_Summary() {
 	PCD8544_Puts("SCORE: ", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 	gotoXY(48, 34);
 	PCD8544_Puts(score_buffer, PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
+	PCD8544_DrawFilledRectangle(77, 26, 83, 48, PCD8544_Pixel_Clear, &PCD8544_Buffer);
 	PCD8544_Refresh();
 }
 

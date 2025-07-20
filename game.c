@@ -49,6 +49,8 @@ static void Welcome_Screen() {
 	PCD8544_Puts("Arcanoid", PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 	gotoXY(26, 26);
 	PCD8544_Puts("Press OK", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
+	gotoXY(40, 40);
+	PCD8544_Putc(HEART_ID, PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
 }
 
 void Button1_Handler() {

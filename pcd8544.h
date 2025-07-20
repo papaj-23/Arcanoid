@@ -44,6 +44,8 @@
 #define PCD8544_HEIGHT				48
 #define PCD8544_BUFFER_SIZE 		PCD8544_WIDTH * PCD8544_HEIGHT / 8
 
+#define HEART_ID 					124
+
 extern const uint8_t PCD8544_Font5x7 [97][5];
 extern const uint8_t PCD8544_Font3x5[106][3];
 
