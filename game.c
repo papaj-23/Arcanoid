@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include "game.h"
 #include "Singleplayer.h"
 #include "input.h"
@@ -8,6 +7,7 @@
 static const unsigned int MENU_STATES_MAIN = 4;
 static const unsigned int MENU_STATES_SETTINGS = 3;
 
+extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim6;
 
@@ -29,9 +29,10 @@ static void Menu_Press_Button1(void);
 static void Set_Difficulty(difficulty_t);
 static void Reset_flags(void);
 static void Set_refreshing(void);
+static void Game_Paused(void);
 
 static void Set_refreshing() {
-	//if(game_flags.change_refreshing_freq) {
+	if(game_flags.change_refreshing_freq) {
 		if(Current_Game_State == INIT || Current_Game_State == GAME) {
 			__HAL_TIM_SET_AUTORELOAD(&htim6, 99);
 		}
@@ -39,8 +40,8 @@ static void Set_refreshing() {
 			__HAL_TIM_SET_AUTORELOAD(&htim6, 1660);
 		}
 
-	//	game_flags.change_refreshing_freq = false;
-	//}
+		game_flags.change_refreshing_freq = false;
+	}
 }
 
 static void Welcome_Screen() {
@@ -50,7 +51,25 @@ static void Welcome_Screen() {
 	gotoXY(26, 26);
 	PCD8544_Puts("Press OK", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 	gotoXY(40, 40);
-	PCD8544_Putc(HEART_ID, PCD8544_Pixel_Set, PCD8544_FontSize_5x7);
+}
+
+static void Game_Paused() {
+	if(game_flags.game_paused) {
+		HAL_TIM_Base_Start_IT(&htim3);
+		HAL_TIM_Base_Start_IT(&htim4);
+		HAL_TIM_Base_Start_IT(&htim6);
+		PCD8544_DrawFilledRectangle(26, 30, 50, 36, PCD8544_Pixel_Clear, &PCD8544_Buffer);
+		game_flags.game_paused = false;
+	}
+	else {
+		HAL_TIM_Base_Stop_IT(&htim3);
+		HAL_TIM_Base_Stop_IT(&htim4);
+		HAL_TIM_Base_Stop_IT(&htim6);
+		gotoXY(26, 30);
+		PCD8544_Puts("Paused", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
+		PCD8544_Refresh();
+		game_flags.game_paused = true;
+	}
 }
 
 void Button1_Handler() {
@@ -60,27 +79,25 @@ void Button1_Handler() {
 
 		case DEFAULT:
 			Current_Game_State = MENU;
-			game_flags.change_refreshing_freq = false;
 			Current_Menu_State = SINGLEPLAYER;
 			break;
 
 		case MENU:
 			Menu_Press_Button1();
+			game_flags.change_refreshing_freq = true;
 			break;
 
 		case INIT:
 			Current_Game_State = GAME;
-			game_flags.change_refreshing_freq = false;
 			break;
 
 		case GAME:
-
+			game_flags.pause_triggered = true;
 			break;
 
 		case GAMEOVER:
 			if(game_flags.summary_done) {
 				Current_Game_State = MENU;
-				game_flags.change_refreshing_freq = false;
 				game_flags.summary_done = false;
 			}
 			break;
@@ -147,7 +164,6 @@ static void Set_Difficulty(difficulty_t difficulty) {
 static void Menu_Press_Button1() {
 	switch(Current_Menu_State) {
 	case SINGLEPLAYER:
-		game_flags.change_refreshing_freq = false;
 		Current_Game_State = INIT;
 		break;
 	case MULTIPLAYER:
@@ -295,9 +311,9 @@ void Main_Game() {
 			sp_flags.game_init_done = true;
 		}
 
-		if(Is_Game_Restarted()) {
-			Game_Restart();
-			Set_Game_Restart(false);
+		if(Sp_Is_Game_Restarted()) {
+			Sp_Game_Restart();
+			Sp_Set_Game_Restart(false);
 		}
 
 		//choosing start point
@@ -315,6 +331,11 @@ void Main_Game() {
 			game_flags.remove_caption = true;
 		}
 
+		if(game_flags.pause_triggered) {
+			Game_Paused();
+			game_flags.pause_triggered = false;
+		}
+
 		//ruch platformy
 		if(sp_flags.platform_move) {
 			Sp_PlatformMove();
@@ -327,12 +348,13 @@ void Main_Game() {
 			sp_flags.ball_move = false;
 		}
 
-		if(Is_Game_Restarted()) {
+		if(Sp_Is_Game_Restarted()) {
 			Current_Game_State = INIT;
 		}
-		else if(Is_Game_Over()) {
+		else if(Sp_Is_Game_Over()) {
 			Current_Game_State = GAMEOVER;
-			Set_Game_Over(false);
+			game_flags.change_refreshing_freq = true;
+			Sp_Set_Game_Over(false);
 		}
 
 		break;

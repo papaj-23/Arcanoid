@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
 #include "Singleplayer.h"
 #include "pcd8544.h"
 #include "input.h"
@@ -39,7 +38,7 @@
 #define LIVES_AMOUNT 2
 
 static Buffer_t Bonus_Buffer = {{0}, PCD8544_WIDTH - 1, 0, PCD8544_HEIGHT - 1, 0};
-static gui_data_t GUI_data = {0, LIVES_AMOUNT, {0}};
+static gui_data_t GUI_data = {0, LIVES_AMOUNT, {{0, false}, {0, false}}};
 static platform_t platform;
 static ball_t ball;
 static collision_points_t collision_points;
@@ -58,7 +57,7 @@ static bool BlocksEqual(BlockID_t a, BlockID_t b);
 static bool Check_Collision_Point(uint8_t *cp);
 static void Ball_Init(int x, int y, int x_prevoius, int y_prevoius);
 static void Platform_Init(int x, int x_prevoius, int width, int velocity, int shift_velocity);
-static void Sp_Display_Lives(void);
+static void Display_Lives(void);
 
 //collision points states
 static bool px_states[5] = {
@@ -85,7 +84,7 @@ void Sp_Display_Score() {
 	}
 }
 
-static void Sp_Display_Lives() {
+static void Display_Lives() {
 	PCD8544_DrawFilledRectangle(77, 26, 83, 48, PCD8544_Pixel_Clear, &PCD8544_Buffer);
 	for(int i = 0; i <= GUI_data.remaining_lives; i++) {
 		gotoXY(77, 40 - i * 7/*PCD8544_CHAR5x7_HEIGHT*/);
@@ -141,11 +140,11 @@ void Sp_GameInit(){
 	gotoXY(4, 32);
 	PCD8544_Puts("Swipe R/L to move", PCD8544_Pixel_Set, PCD8544_FontSize_3x5);
 
-	Sp_Display_Lives();
+	Display_Lives();
 	Sp_Display_Score();
 }
 
-void Game_Restart() {
+void Sp_Game_Restart() {
 	//Clear platform/ball
 	PCD8544_DrawFilledRectangle(1, PLATFORM_Y - 2, BOARD_DIVISON_LINE - 1, PCD8544_HEIGHT, PCD8544_Pixel_Clear, &PCD8544_Buffer); //including all possible positions at the time
 	//PCD8544_DrawFilledRectangle(ball.x - 1, ball.y - 1, ball.x + BALL_SIZE, ball.y + BALL_SIZE + 1, PCD8544_Pixel_Clear, &PCD8544_Buffer); //including all possible positions at the time
@@ -159,7 +158,7 @@ void Game_Restart() {
 	PCD8544_DrawFilledRectangle(ball.x, ball.y, ball.x + BALL_SIZE - 1, ball.y + BALL_SIZE, PCD8544_Pixel_Set, &PCD8544_Buffer);
 
 	GUI_data.remaining_lives--;
-	Sp_Display_Lives();
+	Display_Lives();
 }
 
 void Sp_PlatformMove() {
@@ -473,19 +472,19 @@ static bool BlocksEqual(BlockID_t a, BlockID_t b) {
 }
 
 //Setters and getters for flags ending/restarting game
-bool Is_Game_Over() {
+bool Sp_Is_Game_Over() {
 	return game_info.gameover;
 }
 
-void Set_Game_Over(bool state) {
+void Sp_Set_Game_Over(bool state) {
 	game_info.gameover = state;
 }
 
-bool Is_Game_Restarted() {
+bool Sp_Is_Game_Restarted() {
 	return game_info.game_restart;
 }
 
-void Set_Game_Restart(bool state) {
+void Sp_Set_Game_Restart(bool state) {
 	game_info.game_restart = state;
 }
 

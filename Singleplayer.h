@@ -70,10 +70,10 @@ void Sp_InitShift(void);
 void Sp_BallMove(void);
 void Sp_Summary(void);
 void Sp_Display_Score(void);
-bool Is_Game_Over(void);
-void Set_Game_Over(bool state);
-bool Is_Game_Restarted(void);
-void Set_Game_Restart(bool state);
-void Game_Restart(void);
+bool Sp_Is_Game_Over(void);
+void Sp_Set_Game_Over(bool state);
+bool Sp_Is_Game_Restarted(void);
+void Sp_Set_Game_Restart(bool state);
+void Sp_Game_Restart(void);
 
 #endif

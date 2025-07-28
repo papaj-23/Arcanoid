@@ -34,17 +34,21 @@ typedef enum {
 } menu_level_t;
 
 typedef struct {
-	bool game_refresh;
-	bool remove_caption;
-	bool summary_done;
-	bool change_refreshing_freq;
+	bool game_refresh : 1;
+	bool remove_caption : 1;
+	bool summary_done : 1;
+	bool change_refreshing_freq : 1;
+	bool game_paused : 1;
+	bool pause_triggered : 1;
+	uint8_t reserved : 2;
 } game_flags_t;
 
 typedef struct {
-	bool platform_move;
-	bool init_shift;
-	bool ball_move;
-	bool game_init_done;
+	bool platform_move : 1;
+	bool init_shift : 1;
+	bool ball_move : 1;
+	bool game_init_done : 1;
+	uint8_t reserved : 4;
 } sp_flags_t;
 
 typedef struct {
